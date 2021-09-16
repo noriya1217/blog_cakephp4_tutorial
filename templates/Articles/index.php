@@ -20,6 +20,17 @@
         <td>
             <?= $article->created ?>
         </td>
+        <td>
+            <?= $this->Html->link('Edit', ['action' => 'edit', $article->id]) ?>
+        </td>
+        <td>
+            <?= $this->Form->postLink(
+                'Delete',
+                ['action' => 'delete', $article->id],
+                ['confirm' => 'Are you sure?']
+            )
+            ?>
+        </td>
     </tr>
     <?php endforeach; ?>
 </table>

@@ -44,6 +44,9 @@ class ArticlesTable extends Table
         $this->setPrimaryKey('id');
 
         $this->addBehavior('Timestamp');
+        $this->belongsTo('Categories', [
+            'foreignKey' => 'category_id',
+        ]);
     }
 
     /**
@@ -55,17 +58,10 @@ class ArticlesTable extends Table
     public function validationDefault(Validator $validator): Validator
     {
         $validator
-            ->nonNegativeInteger('id')
-            ->allowEmptyString('id', null, 'create');
-
-        $validator
-            ->scalar('title')
-            ->maxLength('title', 50)
-            ->allowEmptyString('title');
-
-        $validator
-            ->scalar('body')
-            ->allowEmptyString('body');
+            ->notEmpty('title')
+            ->requirePresence('title')
+            ->notEmptyString('body')
+            ->requirePresence('body');
 
         return $validator;
     }
