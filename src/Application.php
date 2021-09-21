@@ -28,6 +28,11 @@ use Cake\Http\MiddlewareQueue;
 use Cake\ORM\Locator\TableLocator;
 use Cake\Routing\Middleware\AssetMiddleware;
 use Cake\Routing\Middleware\RoutingMiddleware;
+use Authentication\AuthenticationService;
+use Authentication\AuthenticationServiceInterface;
+use Authentication\AuthenticationServiceProviderInterface;
+use Authentication\Middleware\AuthenticationMiddleware;
+use Psr\Http\Message\ServerRequestInterface;
 
 /**
  * Application setup class.
@@ -35,8 +40,36 @@ use Cake\Routing\Middleware\RoutingMiddleware;
  * This defines the bootstrapping logic and middleware layers you
  * want to use in your application.
  */
-class Application extends BaseApplication
-{
+class Application extends BaseApplication implements AuthenticationServiceProviderInterface {
+
+    public function getAuthenticationService(ServerRequestInterface $request): AuthenticationServiceInterface {
+        $authenticationService = new AuthenticationService([
+            'unauthenticatedRedirect' => '/blog/users/login',
+            'queryParam' => 'redirect',
+        ]);
+
+        // 識別子をロードして、電子メールとパスワードのフィールドを確認します
+        $authenticationService->loadIdentifier('Authentication.Password', [
+            'fields' => [
+                'username' => 'email',
+                'password' => 'password',
+            ]
+        ]);
+
+        // 認証子をロードするには、最初にセッションを実行する必要があります
+        $authenticationService->loadAuthenticator('Authentication.Session');
+        // メールとパスワードを選択するためのフォームデータチェックの設定
+        $authenticationService->loadAuthenticator('Authentication.Form', [
+            'fields' => [
+                'username' => 'email',
+                'password' => 'password',
+            ],
+            'loginUrl' => '/blog/users/login',
+        ]);
+
+        return $authenticationService;
+    }
+
     /**
      * Load all the application configuration and bootstrap logic.
      *
@@ -84,6 +117,11 @@ class Application extends BaseApplication
             ->add(new AssetMiddleware([
                 'cacheTime' => Configure::read('Asset.cacheTime'),
             ]))
+
+            // ... other middleware added before
+            ->add(new RoutingMiddleware($this))
+            // add Authentication after RoutingMiddleware
+            ->add(new AuthenticationMiddleware($this))
 
             // Add routing middleware.
             // If you have a large number of routes connected, turning on routes
